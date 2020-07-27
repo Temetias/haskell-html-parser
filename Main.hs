@@ -43,6 +43,11 @@ charParser x = Parser f
 stringParser :: String -> Parser String
 stringParser = sequenceA . map charParser
 
+whiteSpaceParser :: Parser String
+whiteSpaceParser = Parser $ \str ->
+    let (whiteSpaceCharacter, rest) = span isSpace str
+        in Just (rest, whiteSpaceCharacter)
+
 inputParser :: Parser HTMLElement
 inputParser = (\_ -> HTMLInput) <$> stringParser "<input/>"
 
