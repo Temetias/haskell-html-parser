@@ -27,6 +27,11 @@ instance Applicative Parser where
             (str'', a) <- parser2 str'
             Just (str'', f a)
 
+instance Alternative Parser where
+    empty = Parser $ \_ -> Nothing
+    (Parser parser1) <|> (Parser parser2) =
+        Parser $ \str -> parser1 str <|> parser2 str
+
 charParser :: Char -> Parser Char
 charParser x = Parser f
     where
@@ -41,8 +46,11 @@ stringParser = sequenceA . map charParser
 inputParser :: Parser HTMLElement
 inputParser = (\_ -> HTMLInput) <$> stringParser "<input/>"
 
+divParser :: Parser HTMLElement
+divParser = (stringParser "<div>" *> htmlParser <* stringParser "</div>")
+
 htmlParser :: Parser HTMLElement
-htmlParser = undefined
+htmlParser = divParser <|> inputParser
 
 main :: IO ()
 main = undefined
