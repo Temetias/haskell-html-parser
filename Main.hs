@@ -47,7 +47,7 @@ inputParser :: Parser HTMLElement
 inputParser = (\_ -> HTMLInput) <$> stringParser "<input/>"
 
 divParser :: Parser HTMLElement
-divParser = (stringParser "<div>" *> htmlParser <* stringParser "</div>")
+divParser = (\els -> HTMLDiv els) <$> (stringParser "<div>" *> many htmlParser <* stringParser "</div>")
 
 htmlParser :: Parser HTMLElement
 htmlParser = divParser <|> inputParser
