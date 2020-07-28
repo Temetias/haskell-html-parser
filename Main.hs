@@ -48,14 +48,19 @@ whiteSpaceParser = Parser $ \str ->
     let (whiteSpaceCharacter, rest) = span isSpace str
         in Just (rest, whiteSpaceCharacter)
 
+whiteSpaceWrap :: Parser a -> Parser a
+whiteSpaceWrap parser = whiteSpaceParser *> parser <* whiteSpaceParser 
+
 inputParser :: Parser HTMLElement
 inputParser = (\_ -> HTMLInput) <$> stringParser "<input/>"
 
 divParser :: Parser HTMLElement
-divParser = (\els -> HTMLDiv els) <$> (stringParser "<div>" *> many htmlParser <* stringParser "</div>")
+divParser = (\els -> HTMLDiv els) <$> (stringParser "<div>" *> innerParser <* stringParser "</div>")
+    where
+        innerParser = whiteSpaceWrap $ many htmlParser
 
 htmlParser :: Parser HTMLElement
-htmlParser = divParser <|> inputParser
+htmlParser = whiteSpaceWrap $ divParser <|> inputParser
 
 main :: IO ()
 main = undefined
