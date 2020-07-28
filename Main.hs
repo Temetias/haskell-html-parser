@@ -4,9 +4,9 @@ import Data.Char
 import Control.Applicative
 
 data HTMLElement
-    = HTMLDiv [HTMLElement]
-    | HTMLSpan [HTMLElement]
-    | HTMLInput
+    = HTMLNonVoidElement [HTMLElement]
+    | HTMLVoidElement String
+    | HTMLText String
     deriving (Show)
 
 newtype Parser a = Parser
@@ -45,22 +45,27 @@ stringParser = sequenceA . map charParser
 
 whiteSpaceParser :: Parser String
 whiteSpaceParser = Parser $ \str ->
-    let (whiteSpaceCharacter, rest) = span isSpace str
-        in Just (rest, whiteSpaceCharacter)
+    let (whiteSpaceCharacters, rest) = span isSpace str
+        in Just (rest, whiteSpaceCharacters)
+    
+tagParser :: Parser String
+tagParser = Parser $ \str ->
+    let (word, rest) = span isLetter str
+        in Just (rest, word)
 
 whiteSpaceWrap :: Parser a -> Parser a
 whiteSpaceWrap parser = whiteSpaceParser *> parser <* whiteSpaceParser 
 
-inputParser :: Parser HTMLElement
-inputParser = (\_ -> HTMLInput) <$> stringParser "<input/>"
+voidElementParser :: Parser HTMLElement
+voidElementParser = (\tag -> HTMLVoidElement tag) <$> (stringParser "<" *> whiteSpaceWrap tagParser <* stringParser "/>")
 
-divParser :: Parser HTMLElement
-divParser = (\els -> HTMLDiv els) <$> (stringParser "<div>" *> innerParser <* stringParser "</div>")
+nonVoidElementParser :: Parser HTMLElement
+nonVoidElementParser = (\els -> HTMLNonVoidElement els) <$> (stringParser "<div>" *> innerParser <* stringParser "</div>")
     where
         innerParser = whiteSpaceWrap $ many htmlParser
 
 htmlParser :: Parser HTMLElement
-htmlParser = whiteSpaceWrap $ divParser <|> inputParser
+htmlParser = whiteSpaceWrap $ nonVoidElementParser <|> voidElementParser
 
 main :: IO ()
 main = undefined
